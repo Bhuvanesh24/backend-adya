@@ -4,7 +4,7 @@ import User from '../models/User.js';
 // Create a new job application
 export const createApplication = async (req, res) => {
   try {
-    const userId = req.user.id; 
+    const userId = req.user.id;
     const applicationData = req.body;
 
     // Create the application
@@ -54,7 +54,7 @@ export const getUserApplications = async (req, res) => {
     if (status) filter.currentStatus = status;
     if (company) filter.company = { $regex: company, $options: 'i' };
 
-    
+
     const user = await User.findById(userId).populate({
       path: 'applications',
       match: filter,
@@ -90,7 +90,7 @@ export const getApplicationById = async (req, res) => {
     const { applicationId } = req.params;
     const userId = req.user.id;
 
-    
+
     const user = await User.findById(userId);
     if (!user.applications.includes(applicationId)) {
       return res.status(403).json({
@@ -100,7 +100,7 @@ export const getApplicationById = async (req, res) => {
     }
 
     const application = await Application.findById(applicationId);
-    
+
     if (!application) {
       return res.status(404).json({
         success: false,
@@ -128,7 +128,7 @@ export const updateApplicationStatus = async (req, res) => {
     const { status, note } = req.body;
     const userId = req.user.id;
 
-    
+
     const user = await User.findById(userId);
     if (!user.applications.includes(applicationId)) {
       return res.status(403).json({
@@ -145,7 +145,7 @@ export const updateApplicationStatus = async (req, res) => {
       });
     }
 
-    
+
     application.currentStatus = status;
     application.statusHistory.push({
       status,
@@ -190,7 +190,7 @@ export const updateApplication = async (req, res) => {
     // Remove sensitive fields that shouldn't be updated directly
     delete updateData.statusHistory;
     delete updateData.createdAt;
-    
+
     updateData.updatedAt = new Date();
 
     const application = await Application.findByIdAndUpdate(
@@ -226,7 +226,7 @@ export const deleteApplication = async (req, res) => {
     const { applicationId } = req.params;
     const userId = req.user.id;
 
-  
+
     const user = await User.findById(userId);
     if (!user.applications.includes(applicationId)) {
       return res.status(403).json({
@@ -243,7 +243,7 @@ export const deleteApplication = async (req, res) => {
       });
     }
 
-    
+
     await User.findByIdAndUpdate(
       userId,
       { $pull: { applications: applicationId } }
@@ -265,13 +265,13 @@ export const deleteApplication = async (req, res) => {
 
 
 // Add notes to application
-export const  addNotes = async (req, res) => {
+export const addNotes = async (req, res) => {
   try {
     const { applicationId } = req.body;
     const { notes } = req.body;
     const userId = req.user.id;
 
-    
+
     const user = await User.findById(userId);
     if (!user.applications.includes(applicationId)) {
       return res.status(403).json({
@@ -282,7 +282,7 @@ export const  addNotes = async (req, res) => {
 
     const application = await Application.findByIdAndUpdate(
       applicationId,
-      { 
+      {
         notes,
         updatedAt: new Date()
       },
@@ -319,7 +319,7 @@ export const addReminder = async (req, res) => {
     const { dueDate, title } = req.body;
     const userId = req.user.id;
 
-    
+
     const user = await User.findById(userId);
     if (!user.applications.includes(applicationId)) {
       return res.status(403).json({
@@ -370,26 +370,29 @@ export const getUserReminders = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
-    let allReminders = [];
     const currentDate = new Date();
+    let allReminders = [];
 
-    // Collect all reminders from applications (single reminder per application)
+    // Extract reminders from applications
     user.applications.forEach(app => {
       if (app.reminders && app.reminders.dueDate) {
         allReminders.push({
+          _id: app._id,
           ...app.reminders.toObject(),
-          applicationId: app._id,
-          jobTitle: app.jobTitle,
-          company: app.company
+          application: {
+            _id: app._id,
+            jobTitle: app.jobTitle,
+            company: app.company
+          }
         });
       }
     });
 
-    // Filter based on query parameters
+    // Filtering logic
     if (completed === 'true') {
       allReminders = allReminders.filter(r => r.isCompleted);
     } else if (completed === 'false') {
@@ -397,33 +400,35 @@ export const getUserReminders = async (req, res) => {
     }
 
     if (upcoming === 'true') {
-      allReminders = allReminders.filter(r => 
+      allReminders = allReminders.filter(r =>
         !r.isCompleted && new Date(r.dueDate) > currentDate
       );
     }
 
     if (overdue === 'true') {
-      allReminders = allReminders.filter(r => 
+      allReminders = allReminders.filter(r =>
         !r.isCompleted && new Date(r.dueDate) < currentDate
       );
     }
 
-    // Sort by due date
     allReminders.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: allReminders,
-      count: allReminders.length
+      count: allReminders.length,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error(error);
+    return res.status(500).json({
       success: false,
       message: 'Error fetching reminders',
-      error: error.message
+      error: error.message,
     });
   }
 };
+
+
 
 // Update reminder completion status
 export const updateReminderStatus = async (req, res) => {
@@ -432,7 +437,7 @@ export const updateReminderStatus = async (req, res) => {
     const { isCompleted } = req.body;
     const userId = req.user.id;
 
-    
+
     const user = await User.findById(userId);
     if (!user.applications.includes(applicationId)) {
       return res.status(403).json({

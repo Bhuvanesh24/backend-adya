@@ -30,8 +30,7 @@ router.delete('/:applicationId', deleteApplication);
 // Status management routes
 router.put('/status', updateApplicationStatus);
 
-// Communication routes
-// router.post('/communications', addCommunication);
+
 
 // Notes routes
 router.put('/notes', addNotes);
@@ -40,7 +39,7 @@ router.put('/notes', addNotes);
 router.post('/reminders', addReminder);
 router.get('/app/reminders', getUserReminders);
 router.put('/reminders/status-update', updateReminderStatus);
-
+router.get('/app/get-reminders',getUserReminders);
 
 
 

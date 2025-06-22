@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   skills: [String],
   professionalSummary: String,
+
   experience: [
     {
       jobTitle: { type: String, required: true },
