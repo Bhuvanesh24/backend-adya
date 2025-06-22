@@ -40,7 +40,7 @@ router.put('/notes', addNotes);
 router.post('/reminders', addReminder);
 router.get('/app/reminders', getUserReminders);
 router.put('/reminders/status-update', updateReminderStatus);
-// router.delete('/delete-rem/:applicationId/reminders/', deleteReminder);
+
 
 
 
