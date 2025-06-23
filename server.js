@@ -27,11 +27,10 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration for production (S3 + EC2)
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [
       'http://buvanesh-adya.s3-website.eu-north-1.amazonaws.com',
-      'https://buvanesh-adya.s3-website.eu-north-1.amazonaws.com' // Add HTTPS version
+      'https://buvanesh-adya.s3-website.eu-north-1.amazonaws.com' 
     ]
   : ['http://localhost:8080', 'http://localhost:3001'];
 
