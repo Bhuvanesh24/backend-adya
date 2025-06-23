@@ -59,12 +59,13 @@ export const login = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
+      secure: false,
+      sameSite: "none",
       maxAge: 15 * 24 * 60 * 60 * 1000 // 15 days
     });
 
     res.status(200).json({
+      success:true,	
       message: "Login successful",
       user: {
         id: user._id,
@@ -85,12 +86,13 @@ export const logout = async (req, res) => {
     // Clear the token cookie
     res.cookie("token", "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
+      secure:false,
+      sameSite: "none",
       expires: new Date(0) // Set expiry to past date
     });
 
     res.status(200).json({
+        success:true,
       message: "Logout successful"
     });
 
