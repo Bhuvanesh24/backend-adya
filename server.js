@@ -28,7 +28,8 @@ const limiter = rateLimit({
 app.use(limiter);
 
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [
+  ? [ 
+      'http://localhost:8080',
       'http://buvanesh-adya.s3-website.eu-north-1.amazonaws.com',
       'https://buvanesh-adya.s3-website.eu-north-1.amazonaws.com' 
     ]
