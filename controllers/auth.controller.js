@@ -2,9 +2,31 @@ import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+// Helper function for cookie options
+const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  return {
+    httpOnly: true,
+    secure: isProduction, // Only secure in production (HTTPS required)
+    sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-origin in production
+    maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days
+    // Add domain if your frontend and backend are on different subdomains
+    ...(isProduction && process.env.COOKIE_DOMAIN && { domain: process.env.COOKIE_DOMAIN })
+  };
+};
+
 export const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
+
+    // Input validation
+    if (!name || !email || !password) {
+      return res.status(400).json({ 
+        success: false,
+        message: "All fields are required" 
+      });
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -27,6 +49,13 @@ export const signup = async (req, res) => {
 
     await newUser.save();
 
+    // Create token and set cookie for immediate login after signup
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
+      expiresIn: "15d"
+    });
+
+    res.cookie("token", token, getCookieOptions());
+
     res.status(201).json({
       success: true,
       message: "Signup successful",
@@ -34,7 +63,8 @@ export const signup = async (req, res) => {
         id: newUser._id,
         name: newUser.name,
         email: newUser.email
-      }
+      },
+      token // Include token in response for debugging
     });
 
   } catch (err) {
@@ -49,6 +79,14 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Input validation
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Email and password are required" 
+      });
+    }
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -70,16 +108,7 @@ export const login = async (req, res) => {
       expiresIn: "15d"
     });
 
-
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true, 
-      sameSite: 'none',
-      maxAge: 15 * 24 * 60 * 60 * 1000, 
-      domain: process.env.COOKIE_DOMAIN || undefined
-    };
-
-    res.cookie("token", token, cookieOptions);
+    res.cookie("token", token, getCookieOptions());
 
     res.status(200).json({
       success: true,
@@ -89,7 +118,7 @@ export const login = async (req, res) => {
         name: user.name,
         email: user.email
       },
-      token
+      token // Include token in response for debugging
     });
 
   } catch (err) {
@@ -104,10 +133,9 @@ export const login = async (req, res) => {
 export const logout = async (req, res) => {
   try {
     const cookieOptions = {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      expires: new Date(0)
+      ...getCookieOptions(),
+      expires: new Date(0), // Expire immediately
+      maxAge: 0
     };
 
     res.cookie("token", "", cookieOptions);
@@ -129,6 +157,7 @@ export const logout = async (req, res) => {
 export const checkAuth = async (req, res) => {
   try {
     const token = req.cookies.token;
+    console.log(token);
     
     if (!token) {
       return res.status(401).json({ 
@@ -137,7 +166,17 @@ export const checkAuth = async (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (jwtError) {
+      console.error("JWT verification failed:", jwtError);
+      return res.status(401).json({ 
+        success: false,
+        message: "Invalid or expired token" 
+      });
+    }
+
     const user = await User.findById(decoded.id).select('-password');
     
     if (!user) {
