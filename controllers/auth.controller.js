@@ -8,8 +8,9 @@ const getCookieOptions = () => {
   
   return {
     httpOnly: true,
-    secure: isProduction, // Only secure in production (HTTPS required)
-    sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-origin in production
+    secure: false,
+    sameSite: isProduction ? 'none' : 'lax', 
+    path: '/',
     maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days
     // Add domain if your frontend and backend are on different subdomains
     ...(isProduction && process.env.COOKIE_DOMAIN && { domain: process.env.COOKIE_DOMAIN })
@@ -117,8 +118,7 @@ export const login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email
-      },
-      token // Include token in response for debugging
+      }
     });
 
   } catch (err) {

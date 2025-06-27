@@ -1,9 +1,7 @@
 import jwt from "jsonwebtoken";
 
-const authMiddleware = (req, res, next) => {
- 
+const authMiddleware = (req, res, next) => { 
   let token = req.cookies.token;
-  
   if (!token && req.headers.authorization) {
     token = req.headers.authorization.replace('Bearer ', '');
   }

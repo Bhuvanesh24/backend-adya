@@ -7,7 +7,7 @@ export const createApplication = async (req, res) => {
     const userId = req.user.id;
     const applicationData = req.body;
 
-    // Create the application
+    
     const application = new Application({
       ...applicationData,
       appliedAt: new Date()
@@ -122,6 +122,7 @@ export const getApplicationById = async (req, res) => {
 };
 
 // Update application status
+
 export const updateApplicationStatus = async (req, res) => {
   try {
     const { applicationId } = req.body;
